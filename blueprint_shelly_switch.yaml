@@ -66,54 +66,26 @@ variables:
 trigger:
   - platform: state
     entity_id: !input primary_input
-    from: "off"
-    to: "on"
-    id: switch_on
-
-  - platform: state
-    entity_id: !input primary_input
-    from: "on"
-    to: "off"
-    id: switch_off
+    id: switch_changed
 
 condition: []
 
 action:
   - choose:
       - conditions:
-          - condition: trigger
-            id: switch_on
+          - condition: template
+            value_template: "{{ action_mode_var == 'lamp' }}"
         sequence:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ action_mode_var == 'lamp' }}"
-                sequence:
-                  - service: light.toggle
-                    target:
-                      entity_id: !input lamp_entity
-              - conditions:
-                  - condition: template
-                    value_template: "{{ action_mode_var == 'custom' }}"
-                sequence: !input custom_on
-
-      - conditions:
-          - condition: trigger
-            id: switch_off
-        sequence:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ action_mode_var == 'custom' }}"
-                sequence: !input custom_off
-
-  - choose:
+          - service: light.toggle
+            target:
+              entity_id: !input lamp_entity
       - conditions:
           - condition: template
-            value_template: "{{ confirm_switch_var is not none and confirm_switch_var != '' }}"
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: !input confirm_switch
+            value_template: "{{ action_mode_var == 'custom' and trigger.to_state.state == 'on' }}"
+        sequence: !input custom_on
+      - conditions:
+          - condition: template
+            value_template: "{{ action_mode_var == 'custom' and trigger.to_state.state == 'off' }}"
+        sequence: !input custom_off
 
 mode: single
