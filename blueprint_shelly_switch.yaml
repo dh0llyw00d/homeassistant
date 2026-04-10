@@ -1,91 +1,34 @@
 blueprint:
-  name: Shelly Detached Input - Switch Only v1.0.0
-  domain: automation
+  name: Shelly Detached Switch - Toggle Light
   description: >
-    Use a detached-mode Shelly wall switch via a binary_sensor to control a light
-    or run custom actions, without cutting power to the load.
-
+    Toggle a light when a Shelly detached-mode switch input changes state.
+    Use the Shelly input binary_sensor as the trigger source.
+  domain: automation
   input:
-    primary_input:
-      name: Binary sensor input
+    shelly_input:
+      name: Shelly input
       description: >
-        The binary_sensor that represents the detached switch input.
+        Select the Shelly binary_sensor that changes when the wall switch is flipped.
       selector:
         entity:
           domain: binary_sensor
 
-    action_mode:
-      name: Action mode
-      description: >
-        Choose how this automation reacts.
-        - lamp: directly control a light entity
-        - custom: execute your own action sequences
-      default: lamp
+    target_light:
+      name: Light to toggle
+      description: The light entity to toggle.
       selector:
-        select:
-          options:
-            - lamp
-            - custom
-
-    lamp_entity:
-      name: "[Lamp mode] Lamp entity"
-      description: >
-        Required when Action mode is set to 'lamp'.
-      default: {}
-      selector:
-        entity:
-          domain: light
-
-    confirm_switch:
-      name: Confirm switch (optional)
-      description: >
-        Optional Shelly feedback output. Turned on after each executed action.
-      default: {}
-      selector:
-        entity:
-          domain: switch
-
-    custom_on:
-      name: "[Custom] ON action"
-      description: Executed when the switch goes from OFF to ON.
-      default: []
-      selector:
-        action: {}
-
-    custom_off:
-      name: "[Custom] OFF action"
-      description: Executed when the switch goes from ON to OFF.
-      default: []
-      selector:
-        action: {}
-
-variables:
-  action_mode_var: !input action_mode
-  confirm_switch_var: !input confirm_switch
+        target:
+          entity:
+            domain: light
 
 trigger:
   - platform: state
-    entity_id: !input primary_input
-    id: switch_changed
+    entity_id: !input shelly_input
 
 condition: []
 
 action:
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ action_mode_var == 'lamp' }}"
-        sequence:
-          - service: light.toggle
-            target:
-              entity_id: !input lamp_entity
-      - conditions:
-          - condition: template
-            value_template: "{{ action_mode_var == 'custom' and trigger.to_state.state == 'on' }}"
-        sequence: !input custom_on
-      - conditions:
-          - condition: template
-            value_template: "{{ action_mode_var == 'custom' and trigger.to_state.state == 'off' }}"
-        sequence: !input custom_off
+  - service: light.toggle
+    target: !input target_light
 
 mode: single
